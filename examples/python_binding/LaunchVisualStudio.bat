@@ -7,7 +7,8 @@ setlocal
 
 pushd %~dp0
 
-call _GetPythonPath.bat
+set PYTHON_INCLUDE_DIR="E:\Program Files\Python\3.6\include"
+set PYTHON_LIBS_DIR="E:\Program Files\Python\3.6\libs"
 
 start python_binding.sln
 
