@@ -7,8 +7,8 @@ setlocal
 
 pushd %~dp0
 
-set PYTHON_INCLUDE_DIR="E:\Program Files\Python\3.6\include"
-set PYTHON_LIBS_DIR="E:\Program Files\Python\3.6\libs"
+set PYTHON_INCLUDE_DIR="E:\Program Files\Python\3.6.8\include"
+set PYTHON_LIBS_DIR="E:\Program Files\Python\3.6.8\libs"
 
 start python_binding.sln
 

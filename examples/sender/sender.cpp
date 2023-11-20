@@ -5,8 +5,8 @@
 #include <softcam/softcam.h>
 
 
-const int WIDTH = 320;
-const int HEIGHT = 240;
+const int WIDTH = 800;
+const int HEIGHT = 600;
 
 
 /// A Rendering Example of Bouncing Balls
@@ -128,7 +128,7 @@ int main()
     // This framerate argument can be omitted, and the default framerate is 60.
     // If you want to send every frame immediately without the frame rate regulator,
     // specify 0 to the framerate argument, then it will be a variable frame rate.
-    scCamera cam = scCreateCamera(WIDTH, HEIGHT, 60);
+    scCamera cam = scCreateCamera(WIDTH, HEIGHT, 40);
     if (!cam)
     {
         std::printf("failed to create camera\n");
