@@ -77,7 +77,7 @@ class Camera
 
         py::gil_scoped_release release;
         return scWaitForConnection(m_camera, timeout);
-    }
+    }    
 
  private:
     scCamera    m_camera{};
@@ -85,6 +85,16 @@ class Camera
     int         m_height = 0;
 };
 
+bool IsInstalled()
+{
+    py::gil_scoped_release release;
+    bool isInstalled = false;
+    if (!scGetInstallationStatus(isInstalled))
+    {
+        throw std::runtime_error("failed to get the installation status");
+    }
+    return isInstalled;
+}
 
 PYBIND11_MODULE(softcam, m) {
     m.doc() = "Softcam";
@@ -109,6 +119,10 @@ PYBIND11_MODULE(softcam, m) {
             "wait_for_connection",
             &Camera::WaitForConnection,
             py::arg("timeout") = 0.0f
-        )
-    ;
+        );
+
+    m.def(
+        "is_installed",
+        &IsInstalled
+    );
 }

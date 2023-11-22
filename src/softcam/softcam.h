@@ -74,4 +74,9 @@ extern "C"
         this function returns `false`.
     */
     bool        SOFTCAM_API scWaitForConnection(scCamera camera, float timeout = 0.0f);
+
+    /*
+        This function gets the installation status of the directshow
+    */
+    bool        SOFTCAM_API scGetInstallationStatus(bool& bInstalled);
 }

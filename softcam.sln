@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30523.141
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "softcam", "src\softcam\softcam.vcxproj", "{52968D29-AA5F-41A4-BF1E-4C50F1098373}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{188CE909-5FAB-49B2-9C9E-5F3405CF343A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core_tests", "tests\core_tests\core_tests.vcxproj", "{13B2EA6E-E43F-4B6A-9709-B25181CB8115}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mytest", "tests\mytest\mytest.vcxproj", "{A6241618-5B40-42E9-BCB1-E01532A2A738}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,14 @@ Global
 		{13B2EA6E-E43F-4B6A-9709-B25181CB8115}.Release|Win32.Build.0 = Release|Win32
 		{13B2EA6E-E43F-4B6A-9709-B25181CB8115}.Release|x64.ActiveCfg = Release|x64
 		{13B2EA6E-E43F-4B6A-9709-B25181CB8115}.Release|x64.Build.0 = Release|x64
+		{A6241618-5B40-42E9-BCB1-E01532A2A738}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A6241618-5B40-42E9-BCB1-E01532A2A738}.Debug|Win32.Build.0 = Debug|Win32
+		{A6241618-5B40-42E9-BCB1-E01532A2A738}.Debug|x64.ActiveCfg = Debug|x64
+		{A6241618-5B40-42E9-BCB1-E01532A2A738}.Debug|x64.Build.0 = Debug|x64
+		{A6241618-5B40-42E9-BCB1-E01532A2A738}.Release|Win32.ActiveCfg = Release|Win32
+		{A6241618-5B40-42E9-BCB1-E01532A2A738}.Release|Win32.Build.0 = Release|Win32
+		{A6241618-5B40-42E9-BCB1-E01532A2A738}.Release|x64.ActiveCfg = Release|x64
+		{A6241618-5B40-42E9-BCB1-E01532A2A738}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -70,6 +80,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{BF2211BE-932A-4E5D-AA41-42304FB243FA} = {188CE909-5FAB-49B2-9C9E-5F3405CF343A}
 		{13B2EA6E-E43F-4B6A-9709-B25181CB8115} = {188CE909-5FAB-49B2-9C9E-5F3405CF343A}
+		{A6241618-5B40-42E9-BCB1-E01532A2A738} = {188CE909-5FAB-49B2-9C9E-5F3405CF343A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {17187F81-AAB0-43FB-9364-23825A0BF643}

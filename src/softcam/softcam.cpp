@@ -2,6 +2,7 @@
 
 #include <olectl.h>
 #include <initguid.h>
+#include <string>
 
 #include <softcamcore/DShowSoftcam.h>
 #include <softcamcore/SenderAPI.h>
@@ -175,4 +176,77 @@ extern "C" void     scSendFrame(scCamera camera, const void* image_bits)
 extern "C" bool     scWaitForConnection(scCamera camera, float timeout)
 {
     return softcam::sender::WaitForConnection(camera, timeout);
+}
+
+extern "C" bool    scGetInstallationStatus(bool& bInstalled)
+{
+    bInstalled = false;
+
+    // Initialize the COM library
+    HRESULT hr = CoInitialize(nullptr);
+    if (FAILED(hr))
+    {
+        return false;
+    }
+
+    // Create the system device enumerator
+    ICreateDevEnum* pDevEnum = nullptr;
+    hr = CoCreateInstance(CLSID_SystemDeviceEnum, nullptr, CLSCTX_INPROC_SERVER, 
+        IID_ICreateDevEnum, (void**)(&pDevEnum));
+    if (FAILED(hr))
+    {
+        //std::cerr << "Failed to create system device enumerator." << std::endl;
+        //CoUninitialize();
+        return false;
+    }
+
+    // Enumerate the video capture devices (cameras)
+    IEnumMoniker* pEnumMoniker = nullptr;
+    hr = pDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &pEnumMoniker, 0);
+    if (hr == S_OK)
+    {
+        const std::wstring friendName = FILTER_NAME;
+
+        // Iterate through the devices
+        IMoniker* pMoniker = nullptr;
+        while (pEnumMoniker->Next(1, &pMoniker, nullptr) == S_OK)
+        {
+            // Get the friendly name of the device            
+            IPropertyBag* pPropBag = nullptr;
+            hr = pMoniker->BindToStorage(nullptr, nullptr, IID_PPV_ARGS(&pPropBag));
+            if (SUCCEEDED(hr))
+            {
+                VARIANT varName;
+                VariantInit(&varName);
+
+                hr = pPropBag->Read(L"FriendlyName", &varName, nullptr);
+                if (SUCCEEDED(hr))
+                {
+                    // Compare the device name with the desired name
+                    if (friendName.compare(varName.bstrVal) == 0)
+                    {
+                        bInstalled = true;
+                        VariantClear(&varName);
+                        pPropBag->Release();
+                        pMoniker->Release();
+                        break;
+                    }
+                }
+
+                VariantClear(&varName);
+                pPropBag->Release();
+            }
+
+            pMoniker->Release();
+        }
+
+        pDevEnum->Release();
+        pEnumMoniker->Release();
+        return true;
+    }
+    else
+    {
+        pDevEnum->Release();
+        return false;
+    }
 }

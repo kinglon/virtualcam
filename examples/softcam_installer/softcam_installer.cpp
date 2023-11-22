@@ -6,7 +6,7 @@
 
 void Message(const std::string& message)
 {
-    MessageBoxA(NULL, message.c_str(), "Softcam Installer", MB_OK);
+    MessageBoxA(NULL, message.c_str(), "ÌáÊ¾", MB_OK);
 }
 
 
@@ -69,11 +69,11 @@ int WINAPI WinMain(
 
         if (FAILED(hr))
         {
-            Message("Error: registration failed (" + ToHex(hr) + ")");
+            Message("ĞéÄâÉãÏñÍ·°²×°Ê§°Ü£¬´íÎóÂë(" + ToHex(hr) + ")");
             return 1;
         }
 
-        Message("softcam.dll has been successfully registered to the system");
+        //Message("softcam.dll has been successfully registered to the system");
         return 0;
     }
     else if (cmd == "unregister")
@@ -85,11 +85,11 @@ int WINAPI WinMain(
 
         if (FAILED(hr))
         {
-            Message("Error: registration failed (" + ToHex(hr) + ")");
+            Message("ĞéÄâÉãÏñÍ·É¾³ıÊ§°Ü£¬´íÎóÂë(" + ToHex(hr) + ")");
             return 1;
         }
 
-        Message("softcam.dll has been successfully unregistered from the system");
+        //Message("softcam.dll has been successfully unregistered from the system");
         return 0;
     }
     else
