@@ -24,7 +24,11 @@ const AMOVIESETUP_MEDIATYPE s_pin_types[] =
 {
     {
         &MEDIATYPE_Video,       // Major type
-        &MEDIASUBTYPE_NULL      // Minor type
+        &MEDIASUBTYPE_ARGB32      // Minor type
+    },
+    {
+        &MEDIATYPE_Video,       // Major type
+        &MEDIASUBTYPE_RGB32      // Minor type
     }
 };
 
@@ -38,7 +42,7 @@ const AMOVIESETUP_PIN s_pins[] =
         FALSE,                  // Can we have many
         &CLSID_NULL,            // Connects to filter
         NULL,                   // Connects to pin
-        1,                      // Number of types
+        2,                      // Number of types
         s_pin_types             // Pin details
     }
 };

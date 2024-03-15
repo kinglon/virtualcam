@@ -11,6 +11,12 @@
 
 namespace {
 
+// ARGB格式，每个像素是4个字节
+const int BytesPerPixel = 4;
+
+// 支持的视频格式
+const GUID SubTypes[2] = { MEDIASUBTYPE_ARGB32 , MEDIASUBTYPE_RGB32 };
+
 //#define ENABLE_LOG
 //#define LOG_FILE_PATH "C:\\my_temp\\debug_log.txt"
 
@@ -97,11 +103,11 @@ AM_MEDIA_TYPE* allocateMediaType()
 
 std::size_t calcDIBSize(int width, int height)
 {
-    std::size_t stride = (static_cast<unsigned>(width) * 3 + 3) & ~3u;
+    std::size_t stride = width * BytesPerPixel;
     return stride * static_cast<unsigned>(height);
 }
 
-void fillMediaType(AM_MEDIA_TYPE* amt, int width, int height, float framerate)
+void fillMediaType(AM_MEDIA_TYPE* amt, GUID subType, int width, int height, float framerate)
 {
     BYTE *pbFormat = amt->pbFormat;
 
@@ -109,11 +115,14 @@ void fillMediaType(AM_MEDIA_TYPE* amt, int width, int height, float framerate)
     {
         framerate = 60.0f;
     }
-    const float bit_rate = (float)width * (float)height * 24 * framerate;
+    const float bit_rate = (float)width * (float)height * BytesPerPixel * 8 * framerate;
     const float period = 10 * 1000 * 1000 / framerate;
 
     VIDEOINFOHEADER* pFormat = (VIDEOINFOHEADER*)pbFormat;
     std::memset(pFormat, 0, sizeof(*pFormat));
+    pFormat->rcSource.right = width;
+    pFormat->rcSource.bottom = height;
+    pFormat->rcTarget = pFormat->rcSource;
     pFormat->dwBitRate = (uint32_t)(std::min)(bit_rate, (float)INT_MAX);
     pFormat->dwBitErrorRate = 0;
     pFormat->AvgTimePerFrame = (LONGLONG)std::round((std::min)(period, (float)LONG_MAX));
@@ -121,12 +130,12 @@ void fillMediaType(AM_MEDIA_TYPE* amt, int width, int height, float framerate)
     pFormat->bmiHeader.biWidth = width;
     pFormat->bmiHeader.biHeight = height;
     pFormat->bmiHeader.biPlanes = 1;
-    pFormat->bmiHeader.biBitCount = 24;
-    pFormat->bmiHeader.biCompression = BI_RGB;
+    pFormat->bmiHeader.biBitCount = BytesPerPixel * 8;
+    pFormat->bmiHeader.biCompression = MAKEFOURCC('A', 'R', 'G', 'B');
     pFormat->bmiHeader.biSizeImage = static_cast<uint32_t>(calcDIBSize(width, height));
 
     amt->majortype = MEDIATYPE_Video;
-    amt->subtype = MEDIASUBTYPE_RGB24;
+    amt->subtype = subType;
     amt->bFixedSizeSamples = TRUE;
     amt->bTemporalCompression = FALSE;
     amt->lSampleSize = static_cast<uint32_t>(calcDIBSize(width, height));
@@ -136,14 +145,14 @@ void fillMediaType(AM_MEDIA_TYPE* amt, int width, int height, float framerate)
     amt->pbFormat = pbFormat;
 }
 
-AM_MEDIA_TYPE* makeMediaType(int width, int height, float framerate)
+AM_MEDIA_TYPE* makeMediaType(GUID subType, int width, int height, float framerate)
 {
     AM_MEDIA_TYPE *amt = allocateMediaType();
     if (!amt)
     {
         return nullptr;
     }
-    fillMediaType(amt, width, height, framerate);
+    fillMediaType(amt, subType, width, height, framerate);
     return amt;
 }
 
@@ -207,10 +216,23 @@ Softcam::SetFormat(AM_MEDIA_TYPE *mt)
         LOG("-> E_FAIL\n");
         return E_FAIL;
     }
-    if (mt->majortype != MEDIATYPE_Video ||
-        mt->subtype != MEDIASUBTYPE_RGB24)
+    if (mt->majortype != MEDIATYPE_Video)
     {
         LOG("-> E_FAIL (invalid media type)\n");
+            return E_FAIL;
+    }
+    bool validSubType = false;
+    for (int i = 0; i < sizeof(SubTypes); i++)
+    {
+        if (mt->subtype == SubTypes[i])
+        {
+            validSubType = true;
+            break;
+        }
+    }
+    if (!validSubType)
+    {
+        LOG("-> E_FAIL (invalid media sub type)\n");
         return E_FAIL;
     }
     if (mt->formattype == FORMAT_VideoInfo && mt->pbFormat)
@@ -222,8 +244,8 @@ Softcam::SetFormat(AM_MEDIA_TYPE *mt)
             LOG("-> E_FAIL (invalid dimension)\n");
             return E_FAIL;
         }
-        if (pFormat->bmiHeader.biBitCount != 24 ||
-            pFormat->bmiHeader.biCompression != BI_RGB)
+        if (pFormat->bmiHeader.biBitCount != BytesPerPixel*8 ||
+            pFormat->bmiHeader.biCompression != MAKEFOURCC('A', 'R', 'G', 'B'))
         {
             LOG("-> E_FAIL (invalid color format)\n");
             return E_FAIL;
@@ -246,7 +268,7 @@ Softcam::GetFormat(AM_MEDIA_TYPE **out_pmt)
         LOG("-> E_FAIL\n");
         return E_FAIL;
     }
-    AM_MEDIA_TYPE* mt = makeMediaType(m_width, m_height, m_framerate);
+    AM_MEDIA_TYPE* mt = makeMediaType(MEDIASUBTYPE_ARGB32, m_width, m_height, m_framerate);
     if (!mt)
     {
         LOG("-> E_OUTOFMEMORY\n");
@@ -270,7 +292,7 @@ Softcam::GetNumberOfCapabilities(int *out_count, int *out_size)
         LOG("-> E_FAIL\n");
         return E_FAIL;
     }
-    *out_count = 1;
+    *out_count = sizeof(SubTypes);
     *out_size = sizeof(VIDEO_STREAM_CONFIG_CAPS);
     LOG("-> S_OK\n");
     return S_OK;
@@ -289,12 +311,12 @@ Softcam::GetStreamCaps(int index, AM_MEDIA_TYPE **out_pmt, BYTE *out_scc)
         LOG("-> E_FAIL\n");
         return E_FAIL;
     }
-    if (index >= 1)
+    if (index >= sizeof(SubTypes))
     {
         LOG("-> S_FALSE (invalid index)\n");
         return S_FALSE;
     }
-    AM_MEDIA_TYPE *mt = makeMediaType(m_width, m_height, m_framerate);
+    AM_MEDIA_TYPE *mt = makeMediaType(SubTypes[index], m_width, m_height, m_framerate);
     if (!mt)
     {
         LOG("-> E_OUTOFMEMORY\n");
@@ -473,10 +495,20 @@ STDMETHODIMP SoftcamStream::Notify(IBaseFilter * pSender, Quality q)
     return NOERROR;
 }
 
-
-HRESULT SoftcamStream::GetMediaType(CMediaType *pmt)
+HRESULT SoftcamStream::GetMediaType(int iPosition, __inout CMediaType* pmt)
 {
-    CheckPointer(pmt,E_POINTER);
+    CAutoLock lock(m_pFilter->pStateLock());
+
+    if (iPosition < 0) 
+    {
+        return E_INVALIDARG;
+    }
+    if (iPosition >= sizeof(SubTypes))
+    {
+        return VFW_S_NO_MORE_ITEMS;
+    }
+
+    CheckPointer(pmt, E_POINTER);
 
     if (!m_valid)
     {
@@ -484,17 +516,34 @@ HRESULT SoftcamStream::GetMediaType(CMediaType *pmt)
         return E_FAIL;
     }
 
-    VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER));
+    VIDEOINFOHEADER* pvi = (VIDEOINFOHEADER*)pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER));
     if (pvi == nullptr)
     {
         LOG("-> E_OUTOFMEMORY\n");
         return E_OUTOFMEMORY;
     }
 
-    fillMediaType(pmt, getParent()->width(), getParent()->height(), getParent()->framerate());
+    fillMediaType(pmt, SubTypes[iPosition], getParent()->width(), getParent()->height(), getParent()->framerate());
 
     LOG("-> NOERROR\n");
     return NOERROR;
+}
+
+HRESULT SoftcamStream::CheckMediaType(const CMediaType* pMediaType)
+{
+    CAutoLock lock(m_pFilter->pStateLock());
+
+    for (int i = 0; i < sizeof(SubTypes); i++)
+    {
+        CMediaType mt;
+        GetMediaType(i, &mt);
+
+        if (mt == *pMediaType) {
+            return NOERROR;
+        }
+    }
+
+    return E_FAIL;
 }
 
 HRESULT SoftcamStream::DecideBufferSize(IMemAllocator *pAlloc,

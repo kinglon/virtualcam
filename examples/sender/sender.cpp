@@ -5,8 +5,8 @@
 #include <softcam/softcam.h>
 
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1920;
+const int HEIGHT = 1080;
 
 
 /// A Rendering Example of Bouncing Balls
@@ -100,18 +100,21 @@ class BouncingBalls
                     int red = x * 256 / WIDTH;
                     int green = 255;
                     int blue = y * 256 / HEIGHT;
+                    int alpha = 255;
 
                     image[0] = (unsigned char)blue;
                     image[1] = (unsigned char)green;
                     image[2] = (unsigned char)red;
+                    image[3] = (unsigned char)alpha;
                 }
                 else
                 {
                     image[0] = 0;
                     image[1] = 0;
                     image[2] = 0;
+                    image[3] = 0;
                 }
-                image += 3;
+                image += 4;
             }
         }
     }
@@ -128,7 +131,7 @@ int main()
     // This framerate argument can be omitted, and the default framerate is 60.
     // If you want to send every frame immediately without the frame rate regulator,
     // specify 0 to the framerate argument, then it will be a variable frame rate.
-    scCamera cam = scCreateCamera(WIDTH, HEIGHT, 40);
+    scCamera cam = scCreateCamera(WIDTH, HEIGHT, 30);
     if (!cam)
     {
         std::printf("failed to create camera\n");
@@ -141,15 +144,15 @@ int main()
     // no matter there is a receiver or not.
     scWaitForConnection(cam);
 
-    // Our canvas is a simple array of RGB pixels.
-    // Note that the color component order is BGR, not RGB.
+    // Our canvas is a simple array of ARGB pixels.
+    // Note that the color component order is BGRA, not ARGB.
     // This is due to the convention of DirectShow.
-    std::vector<unsigned char> image(WIDTH * HEIGHT * 3);
+    std::vector<unsigned char> image(WIDTH * HEIGHT * 4);
 
     // This is an example class for drawing something to the canvas.
     BouncingBalls balls;
 
-    for (int i = 0; i < 100000; i++)
+    while(true)
     {
         // Draw bouncing balls.
         balls.move(1.0f / 60.0f);

@@ -57,7 +57,7 @@ def main():
     if not softcam.is_installed():
         install_camera(True)
 
-    video = VideoFileClip(r'C:\Users\zengxiangbin\Downloads\VID_20231116_210820.mp4')
+    video = VideoFileClip(r'C:\Users\zengxiangbin\Downloads\file_example_MP4_1280_10MG.mp4')
     cam = softcam.camera(video.w, video.h, 30)
     interval = 1 / 30
 

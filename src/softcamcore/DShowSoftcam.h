@@ -65,7 +65,8 @@ class SoftcamStream : public CSourceStream, public IKsPropertySet, public IAMStr
 
     // CSourceStream
     HRESULT FillBuffer(IMediaSample *pms) override;
-    HRESULT GetMediaType(CMediaType *pMediaType) override;
+    HRESULT GetMediaType(int iPosition, __inout CMediaType* pMediaType) override;
+    HRESULT CheckMediaType(const CMediaType* pMediaType) override;
     HRESULT OnThreadCreate(void) override;
 
     //  IKsPropertySet

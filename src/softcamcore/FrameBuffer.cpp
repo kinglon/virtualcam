@@ -6,6 +6,8 @@
 
 namespace softcam {
 
+// ARGB格式，每个像素是4个字节
+const int BytesPerPixel = 4;
 
 const char NamedMutexName[] = "DirectShow Softcam/NamedMutex";
 const char SharedMemoryName[] = "DirectShow Softcam/SharedMemory";
@@ -99,7 +101,7 @@ FrameBuffer FrameBuffer::open()
             fb.m_shmem = {};
             return fb;
         }
-        uint32_t image_size = (uint32_t)frame->m_width * (uint32_t)frame->m_height * 3;
+        uint32_t image_size = (uint32_t)frame->m_width * (uint32_t)frame->m_height * BytesPerPixel;
         if (size <= frame->m_image_offset ||
             size - frame->m_image_offset < image_size)
         {
@@ -188,7 +190,7 @@ void FrameBuffer::write(const void* image_bits)
     std::memcpy(
             frame->imageData(),
             image_bits,
-            (std::size_t)3 * frame->m_width * frame->m_height);
+            (std::size_t)BytesPerPixel * frame->m_width * frame->m_height);
     frame->m_frame_counter += 1;
 }
 
@@ -204,15 +206,14 @@ void FrameBuffer::transferToDIB(void* image_bits, uint64_t* out_frame_counter)
     auto frame = header();
     {
         int w = frame->m_width;
-        int h = frame->m_height;
-        int gap = ((w * 3 + 3) & ~3) - w * 3;
+        int h = frame->m_height;       
         const std::uint8_t* image = frame->imageData();
         std::uint8_t* dest = (std::uint8_t*)image_bits;
         for (int y = 0; y < h; y++)
         {
-            const std::uint8_t* src = image + 3 * w * (h - 1 - y);
-            std::memcpy(dest, src, 3 * (uint32_t)w);
-            dest += 3 * w + gap;
+            const std::uint8_t* src = image + BytesPerPixel * w * (h - 1 - y);
+            std::memcpy(dest, src, BytesPerPixel * (uint32_t)w);
+            dest += BytesPerPixel * w;
         }
         *out_frame_counter = frame->m_frame_counter;
     }
@@ -274,7 +275,7 @@ uint32_t FrameBuffer::calcMemorySize(
                         uint16_t height)
 {
     uint32_t header_size = sizeof(Header);
-    uint32_t image_size = (uint32_t)width * height * 3;
+    uint32_t image_size = (uint32_t)width * height * BytesPerPixel;
     uint32_t shmem_size = header_size + image_size;
     return shmem_size;
 }
