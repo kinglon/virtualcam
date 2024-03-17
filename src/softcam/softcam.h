@@ -11,72 +11,58 @@ extern "C"
 {
     using scCamera = void*;
 
-    /*
-        This function creates a virtual camera instance.
-
-        Camera applications running on the system will be able to find the
-        new virtual camera through DirectShow API.
-
-        The `width` argument and the `height` argument specify the dimension
-        of the camera image. The width and the height should be a positive
-        number and be a multiple of four.
-
-        The `framerate` argument is an optional argument that specifies the
-        reference framerate of the camera. The default framerate is 60.
-
-        If the value of the `framerate` argument is 0, the interval of each
-        frame is not constrained and every frame is sent immediately by the
-        `scSendFrame` function. This is useful if the application has a
-        real-time source stream such as actual webcams.
-
-        If this function succeeds, it returns the handle of a new virtual
-        camera instance, otherwise, it returns a null pointer.
-
-        This function fails if another instance already exists in the system.
-
-        The new instance created by this function should be deleted with
-        the `scDeleteCamera` function when it no longer is used.
-        If the caller process terminates without calling the `scDeleteCamera`
-        function, the virtual camera intance and associated resources are
-        deleted automatically.
-    */
-    scCamera    SOFTCAM_API scCreateCamera(int width, int height, float framerate = 60.0f);
+    using scBitmap = void*;
 
     /*
-        This function deletes the specified virtual camera instance.
+    创建摄像头
+    @param width，摄像头宽度
+    @param height， 摄像头高度
+    @param framerate, 帧率
+    @return 摄像头句柄，调用其他接口时传入
     */
-    void        SOFTCAM_API scDeleteCamera(scCamera camera);
+    scCamera SOFTCAM_API scCreateCamera(int width, int height, float framerate = 60.0f);
 
     /*
-        This function sends a new frame of the specified virtual camera.
-
-        If the framerate set to the virtual camera is not zero, this
-        function tries to make the timing to deliver the new image ideal
-        as much as possible by sleeping for an appropriate time inside the
-        function.
-
-        If the framerate set to the virtual camera is zero, this function
-        sends the new image immediately and does not control that timing.
-        This is useful if the application has a real-time source stream
-        such as actual webcams.
+    删除摄像头
+    @param camera，摄像头句柄，scCreateCamera返回的值
     */
-    void        SOFTCAM_API scSendFrame(scCamera camera, const void* image_bits);
+    void SOFTCAM_API scDeleteCamera(scCamera camera);
 
     /*
-        This function waits until an application connects to the specified
-        virtual camera.
-
-        If the `timeout` argument is greater than 0, this function timeouts
-        after the specified time if no application accesses the virtual camera.
-
-        This function returns `true` if the virtual camera has ever been
-        accessed by an application before this function returns. Otherwise,
-        this function returns `false`.
+    等待应用使用摄像头
+    @param camera，摄像头句柄，scCreateCamera返回的值
+    @param timeout，等待超时，单位秒，0.0f表示永久等待
+    @return true在超时前有应用连接，false在超时前没有应用连接
     */
-    bool        SOFTCAM_API scWaitForConnection(scCamera camera, float timeout = 0.0f);
+    bool SOFTCAM_API scWaitForConnection(scCamera camera, float timeout = 0.0f);
 
     /*
-        This function gets the installation status of the directshow
+    发送图片帧
+    @param camera，摄像头句柄，scCreateCamera返回的值
+    @param image_data，图片数据，BGRA格式
+    @param length, image_data的长度，摄像头宽*摄像头高*4
     */
-    bool        SOFTCAM_API scGetInstallationStatus(bool& bInstalled);
+    void SOFTCAM_API scSendFrame(scCamera camera, const void* image_data, int length);
+
+    /*
+    发送图片帧，与scSendFrame相同，提供一个图片句柄HBITMAP作为参数
+    @param camera，摄像头句柄，scCreateCamera返回的值
+    @param bitmap, 图片句柄HBITMAP
+    */
+    void SOFTCAM_API scSendBitmapFrame(scCamera camera, scBitmap bitmap);    
+
+    /*
+    获取摄像头安装状态
+    @param bInstalled, 调用成功后有效，true表示摄像头已经安装, false表示摄像头未安装
+    @return true调用成功, false调用失败
+    */
+    bool SOFTCAM_API scGetInstallationStatus(bool& bInstalled);
+
+    /*
+    获取使用摄像头的应用列表
+    @param pids，存放使用摄像头的应用进程
+    @param size, pids数组大小
+    @return 使用摄像头的应用数，应用进程id存放在pids里面，返回值不会超过输入参数size
+    */
+    int SOFTCAM_API scGetCameraUsers(unsigned int* pids, unsigned int size);
 }

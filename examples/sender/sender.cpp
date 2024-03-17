@@ -1,9 +1,13 @@
 #include <cstdio>
+#include <Windows.h>
 #include <vector>
 #include <algorithm>
+#include <string>
 #include <cmath>
+#include <gdiplus.h>
 #include <softcam/softcam.h>
 
+#pragma comment (lib, "gdiplus.lib")
 
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
@@ -31,12 +35,12 @@ class BouncingBalls
             vy += delta * ay;
             x += delta * vx;
             y += delta * vy;
-            float cx = std::min(std::max(x, RADIUS), (float)WIDTH - RADIUS);
-            float cy = std::min(y, (float)HEIGHT - RADIUS);
+            float cx = min(max(x, RADIUS), (float)WIDTH - RADIUS);
+            float cy = min(y, (float)HEIGHT - RADIUS);
             ax = (cx - x) * STIFFNESS;
             ay = (cy - y) * STIFFNESS + GRAVITY;
-            rx = std::max(RADIUS - std::abs(cx - x), RADIUS * 0.1f);
-            ry = std::max(RADIUS - std::abs(cy - y), RADIUS * 0.1f);
+            rx = max(RADIUS - std::abs(cx - x), RADIUS * 0.1f);
+            ry = max(RADIUS - std::abs(cy - y), RADIUS * 0.1f);
         }
         void    collide(Ball& other)
         {
@@ -46,8 +50,8 @@ class BouncingBalls
             if (d <= RADIUS * 2.0f)
             {
                 float p = RADIUS * 2.0f - d;
-                float nx = dx / std::max(RADIUS, d);
-                float ny = dy / std::max(RADIUS, d);
+                float nx = dx / max(RADIUS, d);
+                float ny = dy / max(RADIUS, d);
                 ax += p * STIFFNESS * nx;
                 ay += p * STIFFNESS * ny;
                 other.ax -= p * STIFFNESS * nx;
@@ -123,6 +127,10 @@ class BouncingBalls
 
 int main()
 {
+    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+    ULONG_PTR gdiplusToken;
+    Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
     // First, create a virtual camera instance with scCreateCamera().
     // A virtual camera is a source of a video image stream.
     // The dimension width and height can be any positive number
@@ -142,7 +150,7 @@ int main()
     // Here, we wait for an application to connect to this camera.
     // You can comment out this line to start sending frames immediately
     // no matter there is a receiver or not.
-    scWaitForConnection(cam);
+    // scWaitForConnection(cam);
 
     // Our canvas is a simple array of ARGB pixels.
     // Note that the color component order is BGRA, not ARGB.
@@ -152,14 +160,63 @@ int main()
     // This is an example class for drawing something to the canvas.
     BouncingBalls balls;
 
+    // »ñÈ¡²âÊÔÍ¼Æ¬Â·¾¶
+    wchar_t szModulePath[MAX_PATH] = { 0 };
+    GetModuleFileName(NULL, szModulePath, MAX_PATH);
+    for (size_t i = wcslen(szModulePath); i >= 0; --i)
+    {
+        if (szModulePath[i] == '\\')
+        {
+            szModulePath[i] = 0;
+            break;
+        }
+    }
+    std::wstring testImagePath = szModulePath;
+    testImagePath += L"\\test.png";
+
+    // ¼ÓÔØÍ¼Æ¬
+    HBITMAP hBitmap = NULL;
+    Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromFile(testImagePath.c_str(), FALSE);
+    if (bitmap)
+    {
+        bitmap->GetHBITMAP(NULL, &hBitmap);
+        delete bitmap;
+    }
+
+    DWORD lastCheckTime = GetTickCount();
     while(true)
     {
-        // Draw bouncing balls.
-        balls.move(1.0f / 60.0f);
-        balls.draw(image.data());
+        if (hBitmap != NULL)
+        {
+            scSendBitmapFrame(cam, (scBitmap)hBitmap);
+        }
+        else
+        {
+            // Draw bouncing balls.
+            balls.move(1.0f / 60.0f);
+            balls.draw(image.data());
 
-        // Send the image as a newly captured frame of the camera.
-        scSendFrame(cam, image.data());
+            // Send the image as a newly captured frame of the camera.
+            scSendFrame(cam, image.data(), (int)image.size());
+        }        
+
+        if (GetTickCount() - lastCheckTime >= 3000)
+        {
+            unsigned int pids[10];
+            int count = scGetCameraUsers(pids, ARRAYSIZE(pids));
+            if (count == 0)
+            {
+                std::printf("not any in use\n");
+            }
+            else
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    std::printf("%d in use\n", pids[i]);
+                }
+            }
+            lastCheckTime = GetTickCount();
+        }
     }
 
     // Delete the camera instance.

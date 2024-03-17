@@ -47,10 +47,10 @@ void            DeleteCamera(CameraHandle camera)
     }
 }
 
-void            SendFrame(CameraHandle camera, const void* image_bits)
+void            SendFrame(CameraHandle camera, const void* image_bits, int length)
 {
     Camera* target = static_cast<Camera*>(camera);
-    if (target && s_camera.load() == target && image_bits)
+    if (target && s_camera.load() == target && image_bits && length >= target->m_frame_buffer.framesize())
     {
         auto framerate = target->m_frame_buffer.framerate();
         auto frame_counter = target->m_frame_buffer.frameCounter();

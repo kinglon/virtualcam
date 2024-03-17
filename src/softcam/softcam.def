@@ -7,5 +7,7 @@ EXPORTS
             scCreateCamera
             scDeleteCamera
             scSendFrame
+            scSendBitmapFrame
             scWaitForConnection
             scGetInstallationStatus
+            scGetCameraUsers

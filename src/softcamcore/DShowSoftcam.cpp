@@ -7,6 +7,7 @@
 #include <cmath>
 #include <chrono>
 #include <ctime>
+#include "CameraUseMonitor.h"
 
 
 namespace {
@@ -185,6 +186,7 @@ Softcam::Softcam(LPUNKNOWN lpunk, const GUID& clsid, HRESULT *phr) :
     // constructor which registers the instance to this Softcam instance by calling
     // CSource::AddPin().
     (void)new SoftcamStream(phr, this, L"DirectShow Softcam Stream");
+    CCameraUseMonitor::UseCamera(GetCurrentProcessId());
 }
 
 

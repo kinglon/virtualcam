@@ -10,8 +10,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "softcamcore", "src\softcamcore\softcamcore.vcxproj", "{DF9D5A2D-3BED-4D1A-8484-22A654C9AD76}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sender", "examples\sender\sender.vcxproj", "{07DDA575-7366-4ED4-A5C0-CA1D9C2FBD94}"
+	ProjectSection(ProjectDependencies) = postProject
+		{52968D29-AA5F-41A4-BF1E-4C50F1098373} = {52968D29-AA5F-41A4-BF1E-4C50F1098373}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "softcam_installer", "examples\softcam_installer\softcam_installer.vcxproj", "{93A84B31-722E-4346-B455-79E915E21B7A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{52968D29-AA5F-41A4-BF1E-4C50F1098373} = {52968D29-AA5F-41A4-BF1E-4C50F1098373}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

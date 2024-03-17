@@ -151,6 +151,11 @@ int FrameBuffer::height() const
     return m_shmem ? header()->m_height : 0;
 }
 
+int FrameBuffer::framesize() const
+{
+    return BytesPerPixel* width()* height();
+}
+
 float FrameBuffer::framerate() const
 {
     std::lock_guard<NamedMutex> lock(m_mutex);

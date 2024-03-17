@@ -30,6 +30,7 @@ class FrameBuffer
     void*           handle() const;
     int             width() const;
     int             height() const;
+    int             framesize() const;
     float           framerate() const;
     uint64_t        frameCounter() const;
     bool            active() const;

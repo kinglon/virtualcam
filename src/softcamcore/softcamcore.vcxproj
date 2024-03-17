@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CameraUseMonitor.h" />
     <ClInclude Include="DShowSoftcam.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="Misc.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="Watchdog.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CameraUseMonitor.cpp" />
     <ClCompile Include="DShowSoftcam.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Misc.cpp" />
