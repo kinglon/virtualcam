@@ -7,6 +7,7 @@
 #include <softcamcore/DShowSoftcam.h>
 #include <softcamcore/SenderAPI.h>
 #include <softcamcore/CameraUseMonitor.h>
+#include <softcamcore/Setting.h>
 
 
 // {AEF3B972-5FA5-4647-9571-358EB472BC9E}
@@ -18,7 +19,7 @@ namespace {
 
 // Setup data
 
-const wchar_t FILTER_NAME[] = L"DirectShow Softcam";
+const wchar_t* FILTER_NAME = CSetting::GetCameraName();
 const GUID &FILTER_CLASSID = CLSID_DShowSoftcam;
 
 const AMOVIESETUP_MEDIATYPE s_pin_types[] =

@@ -29,6 +29,9 @@
     <ClInclude Include="CameraUseMonitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Setting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FrameBuffer.cpp">
@@ -47,6 +50,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CameraUseMonitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Setting.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

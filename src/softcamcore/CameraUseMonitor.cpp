@@ -1,6 +1,7 @@
 #include "CameraUseMonitor.h"
 #include <thread>
 #include <shlobj.h>
+#include "Setting.h"
 
 void CCameraUseMonitor::Init()
 {
@@ -36,6 +37,8 @@ std::wstring CCameraUseMonitor::GetDataPath()
 		dataPath = L"C:\\softcam";
 		CreateDirectory(dataPath.c_str(), nullptr);
 	}
+	dataPath += std::wstring(L"\\") + CSetting::GetCameraName();
+	CreateDirectory(dataPath.c_str(), nullptr);
 	dataPath += L"\\pids\\";
 	CreateDirectory(dataPath.c_str(), nullptr);
 

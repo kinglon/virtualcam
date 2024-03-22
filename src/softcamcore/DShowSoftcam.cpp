@@ -8,6 +8,7 @@
 #include <chrono>
 #include <ctime>
 #include "CameraUseMonitor.h"
+#include "Setting.h"
 
 
 namespace {
@@ -174,7 +175,7 @@ CUnknown * Softcam::CreateInstance(
 }
 
 Softcam::Softcam(LPUNKNOWN lpunk, const GUID& clsid, HRESULT *phr) :
-    CSource(NAME("DirectShow Softcam"), lpunk, clsid),
+    CSource(CSetting::GetCameraName(), lpunk, clsid),
     m_frame_buffer(FrameBuffer::open()),
     m_valid(m_frame_buffer ? true : false),
     m_width(m_frame_buffer.width()),
@@ -185,7 +186,7 @@ Softcam::Softcam(LPUNKNOWN lpunk, const GUID& clsid, HRESULT *phr) :
     // Calling the SoftcamStream constructor results in calling the CBaseOutputPin
     // constructor which registers the instance to this Softcam instance by calling
     // CSource::AddPin().
-    (void)new SoftcamStream(phr, this, L"DirectShow Softcam Stream");
+    (void)new SoftcamStream(phr, this, CSetting::GetCameraName());
     CCameraUseMonitor::UseCamera(GetCurrentProcessId());
 }
 
@@ -392,7 +393,7 @@ Softcam::releaseFrameBuffer()
 SoftcamStream::SoftcamStream(HRESULT *phr,
                          Softcam *pParent,
                          LPCWSTR pPinName) :
-    CSourceStream(NAME("DirectShow Softcam Stream"), phr, pParent, pPinName),
+    CSourceStream(CSetting::GetCameraName(), phr, pParent, pPinName),
     m_valid(pParent->valid()),
     m_width(pParent->width()),
     m_height(pParent->height())

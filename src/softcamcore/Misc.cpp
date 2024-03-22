@@ -69,8 +69,8 @@ void Timer::sleep(float seconds)
 }
 
 
-NamedMutex::NamedMutex(const char* name) :
-    m_handle(CreateMutexA(nullptr, false, name), closeHandle)
+NamedMutex::NamedMutex(const wchar_t* name) :
+    m_handle(CreateMutex(nullptr, false, name), closeHandle)
 {
     assert( m_handle.get() != nullptr && "Creating a named mutex failed" );
 }
@@ -106,21 +106,21 @@ void NamedMutex::closeHandle(void* ptr)
 }
 
 SharedMemory
-SharedMemory::create(const char* name, unsigned long size)
+SharedMemory::create(const wchar_t* name, unsigned long size)
 {
     return SharedMemory(name, size);
 }
 
 SharedMemory
-SharedMemory::open(const char* name)
+SharedMemory::open(const wchar_t* name)
 {
     return SharedMemory(name);
 }
 
-SharedMemory::SharedMemory(const char* name, unsigned long size)
+SharedMemory::SharedMemory(const wchar_t* name, unsigned long size)
 {
     m_handle.reset(
-        CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, size, name),
+        CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, size, name),
         closeHandle);
     if (m_handle && GetLastError() != ERROR_ALREADY_EXISTS)
     {
@@ -136,10 +136,10 @@ SharedMemory::SharedMemory(const char* name, unsigned long size)
     release();
 }
 
-SharedMemory::SharedMemory(const char* name)
+SharedMemory::SharedMemory(const wchar_t* name)
 {
     m_handle.reset(
-        OpenFileMappingA(FILE_MAP_WRITE, false, name),
+        OpenFileMapping(FILE_MAP_WRITE, false, name),
         closeHandle);
     if (m_handle)
     {

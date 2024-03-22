@@ -29,7 +29,7 @@ class Timer
 class NamedMutex
 {
  public:
-    explicit NamedMutex(const char* name);
+    explicit NamedMutex(const wchar_t* name);
 
     void        lock();
     void        unlock();
@@ -46,8 +46,8 @@ class SharedMemory
 {
  public:
     SharedMemory() {}
-    static SharedMemory create(const char* name, unsigned long size);
-    static SharedMemory open(const char* name);
+    static SharedMemory create(const wchar_t* name, unsigned long size);
+    static SharedMemory open(const wchar_t* name);
 
     explicit operator bool() const { return get() != nullptr; }
 
@@ -60,8 +60,8 @@ class SharedMemory
     std::shared_ptr<void>   m_address;
     unsigned long           m_size = 0;
 
-    explicit SharedMemory(const char* name, unsigned long size);
-    explicit SharedMemory(const char* name);
+    explicit SharedMemory(const wchar_t* name, unsigned long size);
+    explicit SharedMemory(const wchar_t* name);
     void    release();
 
     static void closeHandle(void*);

@@ -54,7 +54,7 @@ class FrameBuffer
     SharedMemory            m_shmem;
     Watchdog                m_watchdog;
 
-    explicit FrameBuffer(const char* mutex_name) : m_mutex(mutex_name) {}
+    explicit FrameBuffer(const wchar_t* mutex_name) : m_mutex(mutex_name) {}
 
     Header*         header();
     const Header*   header() const;
