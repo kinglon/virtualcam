@@ -5,6 +5,6 @@
 class CSetting
 {
 public:
-	static const wchar_t* GetCameraName() { return L"DirectShow Softcam"; }
+	static const wchar_t* GetCameraName() { return L"jeric camera"; }
 };
 

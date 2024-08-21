@@ -53,8 +53,8 @@ int WINAPI WinMain(
     {
         Message(
             "Usage:\n"
-            "   softcam_installer.exe register <softcam.dll path>\n"
-            "   softcam_installer.exe unregister <softcam.dll path>");
+            "   jericcam_installer.exe register <jericcam.dll path>\n"
+            "   jericcam_installer.exe unregister <jericcam.dll path>");
         return 0;
     }
 
