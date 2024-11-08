@@ -10,9 +10,9 @@ namespace py = pybind11;
 class Camera
 {
  public:
-    Camera(int width, int height, float framerate = 60.0f)
+    Camera(int index, int width, int height, float framerate = 60.0f)
     {
-        m_camera = scCreateCamera(width, height, framerate);
+        m_camera = scCreateCamera(index, width, height, framerate);
         if (!m_camera)
         {
             throw std::runtime_error("creating a virtual camera instance failed");
@@ -39,7 +39,7 @@ class Camera
             throw std::runtime_error("the camera instance has been deleted");
         }
         py::buffer_info info = image.request();
-        if (info.ndim != 3 || info.shape[2] != 3)
+        if (info.ndim != 3 || info.shape[2] != 4)
         {
             std::string actual_shape;
             for (int i = 0; i < info.ndim; i++) {
@@ -49,9 +49,9 @@ class Camera
                 }
             }
             throw std::invalid_argument(
-                "'image' argument must be an BGR image (3-dim array): "
+                "'image' argument must be an BGRA image (3-dim array): "
                 "expected shape=("
-                    + std::to_string(m_height) + "," + std::to_string(m_width) + ",3), "
+                    + std::to_string(m_height) + "," + std::to_string(m_width) + ",4), "
                 "actual shape=(" + actual_shape + ")"
             );
         }
@@ -65,7 +65,7 @@ class Camera
         }
 
         py::gil_scoped_release release;
-        scSendFrame(m_camera, image.data(0, 0));
+        scSendFrame(m_camera, image.data(0, 0), m_height*m_width*4);
     }
 
     bool WaitForConnection(float timeout = 0.0f)
@@ -85,23 +85,24 @@ class Camera
     int         m_height = 0;
 };
 
-bool IsInstalled()
+bool IsInstalled(int index)
 {
     py::gil_scoped_release release;
     bool isInstalled = false;
-    if (!scGetInstallationStatus(isInstalled))
+    if (!scGetInstallationStatus(index, isInstalled))
     {
         throw std::runtime_error("failed to get the installation status");
     }
     return isInstalled;
 }
 
-PYBIND11_MODULE(softcam, m) {
-    m.doc() = "Softcam";
+PYBIND11_MODULE(jericcam, m) {
+    m.doc() = "jericcam";
 
     py::class_<Camera>(m, "camera")
         .def(
-            py::init<int, int, float>(),
+            py::init<int, int, int, float>(),
+            py::arg("index"),
             py::arg("width"),
             py::arg("height"),
             py::arg("framerate") = 60.0f
