@@ -17,7 +17,7 @@ void CCameraUseMonitor::Init()
 	init = true;
 }
 
-std::wstring CCameraUseMonitor::GetDataPath()
+std::wstring CCameraUseMonitor::GetDataPath(std::wstring cameraName)
 {
 	static std::wstring dataPath;
 	if (!dataPath.empty())
@@ -37,7 +37,7 @@ std::wstring CCameraUseMonitor::GetDataPath()
 		dataPath = L"C:\\softcam";
 		CreateDirectory(dataPath.c_str(), nullptr);
 	}
-	dataPath += std::wstring(L"\\") + CSetting::GetCameraName();
+	dataPath += std::wstring(L"\\") + cameraName;
 	CreateDirectory(dataPath.c_str(), nullptr);
 	dataPath += L"\\pids\\";
 	CreateDirectory(dataPath.c_str(), nullptr);
@@ -45,10 +45,10 @@ std::wstring CCameraUseMonitor::GetDataPath()
 	return dataPath;
 }
 
-void CCameraUseMonitor::UseCamera(unsigned int pid)
+void CCameraUseMonitor::UseCamera(std::wstring cameraName, unsigned int pid)
 {
 	// 创建文件，用pid命名
-	std::wstring filePath = GetDataPath() + std::to_wstring(pid);
+	std::wstring filePath = GetDataPath(cameraName) + std::to_wstring(pid);
 	HANDLE hFile = CreateFile(filePath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
@@ -56,11 +56,11 @@ void CCameraUseMonitor::UseCamera(unsigned int pid)
 	}
 }
 
-std::vector<unsigned int> CCameraUseMonitor::GetCameraUsers()
+std::vector<unsigned int> CCameraUseMonitor::GetCameraUsers(std::wstring cameraName)
 {
 	std::vector<unsigned int> pids;
 	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile((GetDataPath() + L"*").c_str(), &findFileData);
+	HANDLE hFind = FindFirstFile((GetDataPath(cameraName) + L"*").c_str(), &findFileData);
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
 		do
@@ -86,30 +86,34 @@ void CCameraUseMonitor::ThreadProc()
 	{
 		std::this_thread::sleep_for(std::chrono::seconds(3));
 
-		// 扫描已经退出的进程
-		std::vector<std::wstring> deadPids;
-		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile((GetDataPath() + L"*").c_str(), &findFileData);
-		if (hFind != INVALID_HANDLE_VALUE)
+		const std::vector<std::wstring>& cameraNames = CSetting::GetInstance()->GetCameraNames();
+		for (const auto& cameraName : cameraNames)
 		{
-			do
+			// 扫描已经退出的进程
+			std::vector<std::wstring> deadPids;
+			WIN32_FIND_DATA findFileData;
+			HANDLE hFind = FindFirstFile((GetDataPath(cameraName) + L"*").c_str(), &findFileData);
+			if (hFind != INVALID_HANDLE_VALUE)
 			{
-				if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				do
 				{
-					int pid = _wtoi(findFileData.cFileName);
-					if (pid> 0 && !IsProcessRunning(pid))
+					if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 					{
-						deadPids.push_back(findFileData.cFileName);
+						int pid = _wtoi(findFileData.cFileName);
+						if (pid > 0 && !IsProcessRunning(pid))
+						{
+							deadPids.push_back(findFileData.cFileName);
+						}
 					}
-				}
-			} while (FindNextFile(hFind, &findFileData));
-			FindClose(hFind);
-		}
+				} while (FindNextFile(hFind, &findFileData));
+				FindClose(hFind);
+			}
 
-		// 删除退出进程的文件
-		for (auto deadPid : deadPids)
-		{
-			::DeleteFile((GetDataPath() + deadPid).c_str());
+			// 删除退出进程的文件
+			for (auto deadPid : deadPids)
+			{
+				::DeleteFile((GetDataPath(cameraName) + deadPid).c_str());
+			}
 		}
 	}
 }

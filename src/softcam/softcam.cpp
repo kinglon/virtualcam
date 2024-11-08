@@ -9,18 +9,11 @@
 #include <softcamcore/CameraUseMonitor.h>
 #include <softcamcore/Setting.h>
 
-
-// {AEF3B972-5FA5-4647-9571-358EB472BC9E}
-DEFINE_GUID(CLSID_DShowSoftcam,
-0xaef3b972, 0x5fa5, 0x4647, 0x95, 0x71, 0x35, 0x8e, 0xb4, 0x72, 0xbc, 0x9e);
-
+HANDLE g_dllModule = NULL;
+CFactoryTemplate g_Templates[CAMERA_NUMBER];
+int g_cTemplates = CAMERA_NUMBER;
 
 namespace {
-
-// Setup data
-
-const wchar_t* FILTER_NAME = CSetting::GetCameraName();
-const GUID &FILTER_CLASSID = CLSID_DShowSoftcam;
 
 const AMOVIESETUP_MEDIATYPE s_pin_types[] =
 {
@@ -59,64 +52,85 @@ const REGFILTER2 s_reg_filter2 =
 
 CUnknown * WINAPI CreateSoftcamInstance(LPUNKNOWN lpunk, HRESULT *phr)
 {
-    return softcam::Softcam::CreateInstance(lpunk, FILTER_CLASSID, phr);
+    const std::vector<GUID>& cameraClsid = CSetting::GetInstance()->GetCameraClsid();
+    return softcam::Softcam::CreateInstance(lpunk, cameraClsid[0], phr);
+}
+
+CUnknown* WINAPI CreateSoftcamInstance2(LPUNKNOWN lpunk, HRESULT* phr)
+{
+    const std::vector<GUID>& cameraClsid = CSetting::GetInstance()->GetCameraClsid();
+    return softcam::Softcam::CreateInstance(lpunk, cameraClsid[1], phr);
+}
+
+CUnknown* WINAPI CreateSoftcamInstance3(LPUNKNOWN lpunk, HRESULT* phr)
+{
+    const std::vector<GUID>& cameraClsid = CSetting::GetInstance()->GetCameraClsid();
+    return softcam::Softcam::CreateInstance(lpunk, cameraClsid[2], phr);
+}
+
+CUnknown* WINAPI CreateSoftcamInstance4(LPUNKNOWN lpunk, HRESULT* phr)
+{
+    const std::vector<GUID>& cameraClsid = CSetting::GetInstance()->GetCameraClsid();
+    return softcam::Softcam::CreateInstance(lpunk, cameraClsid[3], phr);
 }
 
 } // namespace
 
-// COM global table of objects in this dll
-
-CFactoryTemplate g_Templates[] =
-{
-    {
-        FILTER_NAME,
-        &FILTER_CLASSID,
-        &CreateSoftcamInstance,
-        NULL,
-        nullptr
-    }
-};
-int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
-
-
-STDAPI DllRegisterServer()
+STDAPI RegisterCameraFilter(int cameraNum)
 {
     HRESULT hr = AMovieDllRegisterServer2(TRUE);
     if (FAILED(hr))
     {
         return hr;
     }
+
     hr = CoInitialize(nullptr);
     if (FAILED(hr))
     {
         return hr;
     }
-    do
+
+    if (cameraNum > CAMERA_NUMBER)
     {
-        IFilterMapper2 *pFM2 = nullptr;
+        cameraNum = CAMERA_NUMBER;
+    }
+    const std::vector<std::wstring>& cameraNames = CSetting::GetInstance()->GetCameraNames();
+    const std::vector<GUID>& cameraClsid = CSetting::GetInstance()->GetCameraClsid();
+    for (int i=0; i< cameraNum; i++)
+    {
+        IFilterMapper2* pFM2 = nullptr;
         hr = CoCreateInstance(
-                CLSID_FilterMapper2, nullptr, CLSCTX_INPROC_SERVER,
-                IID_IFilterMapper2, (void**)&pFM2);
+            CLSID_FilterMapper2, nullptr, CLSCTX_INPROC_SERVER,
+            IID_IFilterMapper2, (void**)&pFM2);
         if (FAILED(hr))
         {
             break;
         }
+
         pFM2->UnregisterFilter(
-                &CLSID_VideoInputDeviceCategory,
-                0,
-                FILTER_CLASSID);
+            &CLSID_VideoInputDeviceCategory,
+            0,
+            cameraClsid[i]);
+
         hr = pFM2->RegisterFilter(
-                FILTER_CLASSID,
-                FILTER_NAME,
-                0,
-                &CLSID_VideoInputDeviceCategory,
-                FILTER_NAME,
-                &s_reg_filter2);
+            cameraClsid[i],
+            cameraNames[i].c_str(),
+            0,
+            &CLSID_VideoInputDeviceCategory,
+            cameraNames[i].c_str(),
+            &s_reg_filter2);
+
         pFM2->Release();
-    } while (0);
+    }
+
     CoFreeUnusedLibraries();
     CoUninitialize();
     return hr;
+}
+
+STDAPI DllRegisterServer()
+{
+    return RegisterCameraFilter(CAMERA_NUMBER);
 }
 
 STDAPI DllUnregisterServer()
@@ -126,12 +140,16 @@ STDAPI DllUnregisterServer()
     {
         return hr;
     }
+
     hr = CoInitialize(nullptr);
     if (FAILED(hr))
     {
         return hr;
     }
-    do
+
+    const std::vector<std::wstring>& cameraNames = CSetting::GetInstance()->GetCameraNames();
+    const std::vector<GUID>& cameraClsid = CSetting::GetInstance()->GetCameraClsid();
+    for (int i = 0; i < CAMERA_NUMBER; i++)
     {
         IFilterMapper2 *pFM2 = nullptr;
         hr = CoCreateInstance(
@@ -141,12 +159,15 @@ STDAPI DllUnregisterServer()
         {
             break;
         }
+
         hr = pFM2->UnregisterFilter(
                 &CLSID_VideoInputDeviceCategory,
-                FILTER_NAME,
-                FILTER_CLASSID);
+                cameraNames[i].c_str(),
+                cameraClsid[i]);
+
         pFM2->Release();
-    } while (0);
+    }
+
     CoFreeUnusedLibraries();
     CoUninitialize();
     return hr;
@@ -156,6 +177,21 @@ extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  dwReason, LPVOID lpReserved)
 {
+    g_dllModule = hModule;
+    const std::vector<std::wstring>& cameraNames = CSetting::GetInstance()->GetCameraNames();
+    const std::vector<GUID>& cameraClsids = CSetting::GetInstance()->GetCameraClsid();
+    for (int i = 0; i < CAMERA_NUMBER; i++)
+    {
+        g_Templates[i].m_Name = cameraNames[i].c_str();
+        g_Templates[i].m_ClsID = &cameraClsids[i];
+        g_Templates[i].m_lpfnInit = nullptr;
+        g_Templates[i].m_pAMovieSetup_Filter = nullptr;
+    }
+    g_Templates[0].m_lpfnNew = &CreateSoftcamInstance;
+    g_Templates[1].m_lpfnNew = &CreateSoftcamInstance2;
+    g_Templates[2].m_lpfnNew = &CreateSoftcamInstance3;
+    g_Templates[3].m_lpfnNew = &CreateSoftcamInstance4;
+
     return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
 }
 
@@ -164,10 +200,10 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  dwReason, LPVOID lpReserved)
 // Softcam Sender API
 //
 
-extern "C" scCamera scCreateCamera(int width, int height, float framerate)
+extern "C" scCamera scCreateCamera(int index, int width, int height, float framerate)
 {
     CCameraUseMonitor::Init();
-    return softcam::sender::CreateCamera(width, height, framerate);
+    return softcam::sender::CreateCamera(index, width, height, framerate);
 }
 
 extern "C" void     scDeleteCamera(scCamera camera)
@@ -220,8 +256,13 @@ extern "C" bool     scWaitForConnection(scCamera camera, float timeout)
     return softcam::sender::WaitForConnection(camera, timeout);
 }
 
-extern "C" bool    scGetInstallationStatus(bool& bInstalled)
+extern "C" bool    scGetInstallationStatus(int index, bool& bInstalled)
 {
+    if (index >= CAMERA_NUMBER)
+    {
+        return false;
+    }
+
     bInstalled = false;
 
     // Initialize the COM library
@@ -247,7 +288,7 @@ extern "C" bool    scGetInstallationStatus(bool& bInstalled)
     hr = pDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &pEnumMoniker, 0);
     if (hr == S_OK)
     {
-        const std::wstring friendName = FILTER_NAME;
+        const std::wstring friendName = CSetting::GetInstance()->GetCameraNames()[index];
 
         // Iterate through the devices
         IMoniker* pMoniker = nullptr;
@@ -294,9 +335,15 @@ extern "C" bool    scGetInstallationStatus(bool& bInstalled)
 }
 
 
-extern "C" int SOFTCAM_API scGetCameraUsers(unsigned int* pids, unsigned int size)
+extern "C" int SOFTCAM_API scGetCameraUsers(int index, unsigned int* pids, unsigned int size)
 {
-    std::vector<unsigned int> users = CCameraUseMonitor::GetCameraUsers();
+    if (index >= CAMERA_NUMBER)
+    {
+        return 0;
+    }
+
+    std::wstring cameraName = CSetting::GetInstance()->GetCameraNames()[index];
+    std::vector<unsigned int> users = CCameraUseMonitor::GetCameraUsers(cameraName);
     unsigned int length = min((unsigned int)users.size(), size);
     for (unsigned int i = 0; i < length; i++)
     {

@@ -1,9 +1,10 @@
 #include "SenderAPI.h"
 
 #include <atomic>
-
+#include <vector>
 #include "FrameBuffer.h"
 #include "Misc.h"
+#include "Setting.h"
 
 
 namespace {
@@ -22,9 +23,17 @@ std::atomic<Camera*>    s_camera;
 namespace softcam {
 namespace sender {
 
-CameraHandle    CreateCamera(int width, int height, float framerate)
+// cameraIndex  ´Ó0¿ªÊ¼
+CameraHandle    CreateCamera(int cameraIndex, int width, int height, float framerate)
 {
-    if (auto fb = FrameBuffer::create(width, height, framerate))
+    if (cameraIndex >= CAMERA_NUMBER)
+    {
+        return nullptr;
+    }
+    
+    std::wstring mutextName = CSetting::GetInstance()->GetMutexNameByIndex(cameraIndex);
+    std::wstring sharedMemoryName = CSetting::GetInstance()->GetSharedMemoryNameByIndex(cameraIndex);
+    if (auto fb = FrameBuffer::create(mutextName.c_str(), sharedMemoryName.c_str(), width, height, framerate))
     {
         Camera* camera = new Camera{ fb, Timer() };
         Camera* expected = nullptr;

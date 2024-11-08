@@ -175,19 +175,23 @@ CUnknown * Softcam::CreateInstance(
 }
 
 Softcam::Softcam(LPUNKNOWN lpunk, const GUID& clsid, HRESULT *phr) :
-    CSource(CSetting::GetCameraName(), lpunk, clsid),
-    m_frame_buffer(FrameBuffer::open()),
-    m_valid(m_frame_buffer ? true : false),
-    m_width(m_frame_buffer.width()),
-    m_height(m_frame_buffer.height()),
-    m_framerate(m_frame_buffer.framerate())
+    CSource(CSetting::GetInstance()->GetCameraName(clsid).c_str(), lpunk, clsid),
+    m_frame_buffer(FrameBuffer::open(CSetting::GetInstance()->GetMutexNameByClsid(clsid).c_str(),
+        CSetting::GetInstance()->GetSharedMemoryNameByClsid(clsid).c_str()))
 {
+    m_valid = m_frame_buffer ? true : false;
+    m_width = m_frame_buffer.width();
+    m_height = m_frame_buffer.height();
+    m_framerate = m_frame_buffer.framerate();
+    m_clsid = clsid;
+
     // This code is okay though it may look strange as the return value is ignored.
     // Calling the SoftcamStream constructor results in calling the CBaseOutputPin
     // constructor which registers the instance to this Softcam instance by calling
     // CSource::AddPin().
-    (void)new SoftcamStream(phr, this, CSetting::GetCameraName());
-    CCameraUseMonitor::UseCamera(GetCurrentProcessId());
+    std::wstring cameraName = CSetting::GetInstance()->GetCameraName(clsid);
+    (void)new SoftcamStream(phr, this, cameraName.c_str());
+    CCameraUseMonitor::UseCamera(cameraName, GetCurrentProcessId());
 }
 
 
@@ -364,7 +368,9 @@ FrameBuffer* Softcam::getFrameBuffer()
     CAutoLock lock(&m_critsec);
     if (!m_frame_buffer)
     {
-        auto fb = FrameBuffer::open();
+        std::wstring mutextName = CSetting::GetInstance()->GetMutexNameByClsid(m_clsid);
+        std::wstring sharedMemoryName = CSetting::GetInstance()->GetSharedMemoryNameByClsid(m_clsid);
+        auto fb = FrameBuffer::open(mutextName.c_str(), sharedMemoryName.c_str());
         if (fb &&
             fb.active() &&
             fb.width() == m_width &&
@@ -393,7 +399,7 @@ Softcam::releaseFrameBuffer()
 SoftcamStream::SoftcamStream(HRESULT *phr,
                          Softcam *pParent,
                          LPCWSTR pPinName) :
-    CSourceStream(CSetting::GetCameraName(), phr, pParent, pPinName),
+    CSourceStream(pPinName, phr, pParent, pPinName),
     m_valid(pParent->valid()),
     m_width(pParent->width()),
     m_height(pParent->height())

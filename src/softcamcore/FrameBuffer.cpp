@@ -10,10 +10,6 @@ namespace softcam {
 // ARGB格式，每个像素是4个字节
 const int BytesPerPixel = 4;
 
-const std::wstring NamedMutexName = std::wstring(CSetting::GetCameraName()) + L"/{46E39490-767C-4A77-AD22-AEDA01FC0186}";
-const std::wstring SharedMemoryName = std::wstring(CSetting::GetCameraName()) + L"/{A59C7958-74D1-4A9F-8F8F-7027725A244D}";
-
-
 struct FrameBuffer::Header
 {
     uint32_t    m_image_offset;
@@ -38,11 +34,13 @@ uint8_t* FrameBuffer::Header::imageData()
 
 
 FrameBuffer FrameBuffer::create(
+                        std::wstring mutexName,
+                        std::wstring sharedMemoryName,
                         int             width,
                         int             height,
                         float           framerate)
 {
-    FrameBuffer fb(NamedMutexName.c_str());
+    FrameBuffer fb(mutexName.c_str());
 
     if (!checkDimensions(width, height))
     {
@@ -54,7 +52,7 @@ FrameBuffer FrameBuffer::create(
     }
 
     auto shmem_size = calcMemorySize((uint16_t)width, (uint16_t)height);
-    fb.m_shmem = SharedMemory::create(SharedMemoryName.c_str(), shmem_size);
+    fb.m_shmem = SharedMemory::create(sharedMemoryName.c_str(), shmem_size);
     if (fb.m_shmem)
     {
         std::lock_guard<NamedMutex> lock(fb.m_mutex);
@@ -80,11 +78,11 @@ FrameBuffer FrameBuffer::create(
     return fb;
 }
 
-FrameBuffer FrameBuffer::open()
+FrameBuffer FrameBuffer::open(std::wstring mutexName,  std::wstring sharedMemoryName)
 {
-    FrameBuffer fb(NamedMutexName.c_str());
+    FrameBuffer fb(mutexName.c_str());
 
-    fb.m_shmem = SharedMemory::open(SharedMemoryName.c_str());
+    fb.m_shmem = SharedMemory::open(sharedMemoryName.c_str());
     if (fb.m_shmem)
     {
         std::lock_guard<NamedMutex> lock(fb.m_mutex);

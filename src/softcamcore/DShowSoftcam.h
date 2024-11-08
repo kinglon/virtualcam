@@ -36,10 +36,11 @@ public:
 private:
     CCritSec    m_critsec;
     FrameBuffer m_frame_buffer;
-    const bool  m_valid;
-    const int   m_width;
-    const int   m_height;
-    const float m_framerate;
+    bool  m_valid;
+    int   m_width;
+    int   m_height;
+    float m_framerate;
+    GUID m_clsid;
 
     Softcam(LPUNKNOWN lpunk, const GUID& clsid, HRESULT *phr);
 };
@@ -86,9 +87,9 @@ class SoftcamStream : public CSourceStream, public IKsPropertySet, public IAMStr
     HRESULT STDMETHODCALLTYPE GetStreamCaps(int index, AM_MEDIA_TYPE **out_pmt, BYTE *out_scc) override;
 
 private:
-    const bool  m_valid;
-    const int   m_width;
-    const int   m_height;
+    bool  m_valid;
+    int   m_width;
+    int   m_height;
     uint64_t    m_frame_counter = 0;
     std::unique_ptr<uint8_t[]>  m_screenshot;
 

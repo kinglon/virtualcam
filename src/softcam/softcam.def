@@ -4,6 +4,7 @@ EXPORTS
             DllCanUnloadNow         PRIVATE
             DllRegisterServer       PRIVATE
             DllUnregisterServer     PRIVATE
+            RegisterCameraFilter PRIVATE
             scCreateCamera
             scDeleteCamera
             scSendFrame

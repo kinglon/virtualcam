@@ -125,11 +125,17 @@ class BouncingBalls
 };
 
 
-int main()
+int main(int argc, char* argv[])
 {
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
+    int cameraIndex = 0;
+    if (argc >= 2)
+    {
+        cameraIndex = atoi(argv[1]);
+    }
 
     // First, create a virtual camera instance with scCreateCamera().
     // A virtual camera is a source of a video image stream.
@@ -139,7 +145,7 @@ int main()
     // This framerate argument can be omitted, and the default framerate is 60.
     // If you want to send every frame immediately without the frame rate regulator,
     // specify 0 to the framerate argument, then it will be a variable frame rate.
-    scCamera cam = scCreateCamera(WIDTH, HEIGHT, 30);
+    scCamera cam = scCreateCamera(cameraIndex, WIDTH, HEIGHT, 30);
     if (!cam)
     {
         std::printf("failed to create camera\n");
@@ -203,7 +209,7 @@ int main()
         if (GetTickCount() - lastCheckTime >= 3000)
         {
             unsigned int pids[10];
-            int count = scGetCameraUsers(pids, ARRAYSIZE(pids));
+            int count = scGetCameraUsers(cameraIndex, pids, ARRAYSIZE(pids));
             if (count == 0)
             {
                 std::printf("not any in use\n");

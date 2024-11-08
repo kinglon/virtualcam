@@ -4,6 +4,7 @@
 #include <cstddef>
 #include "Misc.h"
 #include "Watchdog.h"
+#include <string>
 
 
 namespace softcam {
@@ -19,10 +20,12 @@ class FrameBuffer
 {
  public:
     static FrameBuffer create(
+                        std::wstring mutexName,
+                        std::wstring sharedMemoryName,
                         int             width,
                         int             height,
                         float           framerate = 0.0f);
-    static FrameBuffer open();
+    static FrameBuffer open(std::wstring mutexName, std::wstring sharedMemoryName);
 
     FrameBuffer& operator =(const FrameBuffer&);
     explicit operator bool() const { return handle() != nullptr; }

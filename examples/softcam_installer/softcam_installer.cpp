@@ -49,23 +49,43 @@ int WINAPI WinMain(
     LPSTR /*lpszCmdLine*/,
     int /*nCmdShow*/)
 {
-    if (__argc != 3)
+    if (__argc < 3)
     {
         Message(
             "Usage:\n"
-            "   jericcam_installer.exe register <jericcam.dll path>\n"
+            "   jericcam_installer.exe register <jericcam.dll path> camera_number\n"
             "   jericcam_installer.exe unregister <jericcam.dll path>");
         return 0;
     }
 
     std::string cmd = __argv[1], path = __argv[2];
+    int cameraNumber = 0;
+    if (cmd == "register")
+    {
+        if (__argc < 4)
+        {
+            Message(
+                "Usage:\n"
+                "   jericcam_installer.exe register <jericcam.dll path> camera_number\n"
+                "   jericcam_installer.exe unregister <jericcam.dll path>");
+            return 0;
+        }
+
+        cameraNumber = atoi(__argv[3]);
+        if (cameraNumber <= 0)
+        {
+            Message("the param of camera number is wrong");
+            return 0;
+        }
+    }
 
     if (cmd == "register")
     {
-        auto hmod = LoadDLL(path);
-        auto RegisterServer = GetProc<HRESULT STDAPICALLTYPE()>(hmod, "DllRegisterServer");
 
-        auto hr = RegisterServer();
+        auto hmod = LoadDLL(path);
+        auto RegisterCameraFilter = GetProc<HRESULT STDAPICALLTYPE(int cameraNum)>(hmod, "RegisterCameraFilter");
+
+        auto hr = RegisterCameraFilter(cameraNumber);
 
         if (FAILED(hr))
         {
