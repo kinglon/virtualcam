@@ -2,8 +2,8 @@ import sys
 import os
 from moviepy.editor import VideoFileClip
 import time
-import numpy as np
 import cv2
+import threading
 
 # Get the directory of the running script
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -12,50 +12,45 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(script_dir)
 import jericcam
 
-def runAsAdmin(cmdLine=None, wait=True):
-    import win32api, win32con, win32event, win32process
+
+def run_as_admin(cmdline=None, wait=True):
+    import win32con
+    import win32event
+    import win32process
     from win32com.shell.shell import ShellExecuteEx
     from win32com.shell import shellcon
-    python_exe = sys.executable
-    cmd = '"%s"' % (cmdLine[0],)
-    # XXX TODO: isn't there a function or something we can call to massage command line params?
-    params = " ".join(['"%s"' % (x,) for x in cmdLine[1:]])
-    cmdDir = ''
-    showCmd = win32con.SW_SHOWNORMAL
-    #showCmd = win32con.SW_HIDE
-    lpVerb = 'runas'  # causes UAC elevation prompt.
-    # print "Running", cmd, params
-    # ShellExecute() doesn't seem to allow us to fetch the PID or handle
-    # of the process, so we can't get anything useful from it. Therefore
-    # the more complex ShellExecuteEx() must be used.
-    # procHandle = win32api.ShellExecute(0, lpVerb, cmd, params, cmdDir, showCmd)
-    procInfo = ShellExecuteEx(nShow=showCmd,
-                              fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
-                              lpVerb=lpVerb,
-                              lpFile=cmd,
-                              lpParameters=params)
+    cmd = '"%s"' % (cmdline[0],)
+    params = " ".join(['"%s"' % (x,) for x in cmdline[1:]])
+    showcmd = win32con.SW_SHOWNORMAL
+    lpverb = 'runas'  # causes UAC elevation prompt.
+    proc_info = ShellExecuteEx(nShow=showcmd,
+                               fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
+                               lpVerb=lpverb,
+                               lpFile=cmd,
+                               lpParameters=params)
     if wait:
-        procHandle = procInfo['hProcess']
-        obj = win32event.WaitForSingleObject(procHandle, win32event.INFINITE)
-        rc = win32process.GetExitCodeProcess(procHandle)
-        #print "Process handle %s returned code %s" % (procHandle, rc)
+        proc_handle = proc_info['hProcess']
+        win32event.WaitForSingleObject(proc_handle, win32event.INFINITE)
+        rc = win32process.GetExitCodeProcess(proc_handle)
     else:
         rc = None
     return rc
 
+
 # camera_number 取值1-4
 def install_camera(install, camera_number):
-    cmdLine = []
+    cmdline = []
     executable_path = r'"{}\jericcam_installer.exe"'.format(script_dir)
-    cmdLine.append(executable_path)
+    cmdline.append(executable_path)
     if install:
-        cmdLine.append('register')        
+        cmdline.append('register')
     else:
-        cmdLine.append('unregister')
-    cmdLine.append(r'"{}\jericcam.dll"'.format(script_dir))
+        cmdline.append('unregister')
+    cmdline.append(r'"{}\jericcam.dll"'.format(script_dir))
     if install:
-        cmdLine.append(str(camera_number))
-    runAsAdmin(cmdLine, True)
+        cmdline.append(str(camera_number))
+    run_as_admin(cmdline, True)
+
 
 def convert_frame_to_bgra(frame):
     """Converts an RGB or RGBA frame to BGRA format.
@@ -73,10 +68,8 @@ def convert_frame_to_bgra(frame):
             bgra_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2BGRA)
 
         elif frame.shape[-1] == 4:  # RGBA
-            rgba_frame = frame.copy() #avoid modifying the original frame
-            bgra_frame = rgba_frame[:,:,[2,1,0,3]] #reorder channels
-
-
+            rgba_frame = frame.copy()  # avoid modifying the original frame
+            bgra_frame = rgba_frame[:, :, [2, 1, 0, 3]]  # reorder channels
         else:
             print("Error: Unsupported frame format. Must be RGB or RGBA.")
             return None
@@ -85,13 +78,9 @@ def convert_frame_to_bgra(frame):
     except Exception as e:
         print(f"Error during BGRA conversion: {e}")
         return None
-        
-def main():
-    # check if jericcam is installed
-    camera_index = 0  # 0-3
-    if not jericcam.is_installed(camera_index):
-        install_camera(True, 2)
 
+
+def send_thread(camera_index):
     video = VideoFileClip(r'C:\Users\zengxiangbin\Downloads\file_example_MP4_1280_10MG.mp4')
     cam = jericcam.camera(camera_index, video.w, video.h, 30)
     interval = 1 / 30
@@ -110,8 +99,26 @@ def main():
     # Close the video file
     video.close()
 
+
+def main():
+    # check if jericcam is installed
+    camera_count = 2
+    for camera_index in range(camera_count):
+        if not jericcam.is_installed(camera_index):
+            install_camera(True, camera_count)
+            break
+
+    threads = []
+    for camera_index in range(camera_count):
+        thread = threading.Thread(target=send_thread, args=(camera_index,))
+        thread.start()
+        threads.append(thread)
+    for thread in threads:
+        thread.join()
+
     # uninstall the camera if not need, the second param is ignored
     install_camera(False, 0)
+
 
 if __name__ == '__main__':
     main()

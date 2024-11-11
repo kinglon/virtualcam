@@ -15,8 +15,6 @@ struct Camera
     softcam::Timer          m_timer;
 };
 
-std::atomic<Camera*>    s_camera;
-
 } //namespace
 
 
@@ -36,12 +34,7 @@ CameraHandle    CreateCamera(int cameraIndex, int width, int height, float frame
     if (auto fb = FrameBuffer::create(mutextName.c_str(), sharedMemoryName.c_str(), width, height, framerate))
     {
         Camera* camera = new Camera{ fb, Timer() };
-        Camera* expected = nullptr;
-        if (s_camera.compare_exchange_strong(expected, camera))
-        {
-            return camera;
-        }
-        delete camera;
+        return camera;        
     }
     return nullptr;
 }
@@ -49,7 +42,7 @@ CameraHandle    CreateCamera(int cameraIndex, int width, int height, float frame
 void            DeleteCamera(CameraHandle camera)
 {
     Camera* target = static_cast<Camera*>(camera);
-    if (target && s_camera.compare_exchange_strong(target, nullptr))
+    if (target)
     {
         target->m_frame_buffer.deactivate();
         delete target;
@@ -59,7 +52,7 @@ void            DeleteCamera(CameraHandle camera)
 void            SendFrame(CameraHandle camera, const void* image_bits, int length)
 {
     Camera* target = static_cast<Camera*>(camera);
-    if (target && s_camera.load() == target && image_bits && length >= target->m_frame_buffer.framesize())
+    if (target && image_bits && length >= target->m_frame_buffer.framesize())
     {
         auto framerate = target->m_frame_buffer.framerate();
         auto frame_counter = target->m_frame_buffer.frameCounter();
@@ -104,7 +97,7 @@ void            SendFrame(CameraHandle camera, const void* image_bits, int lengt
 bool            WaitForConnection(CameraHandle camera, float timeout)
 {
     Camera* target = static_cast<Camera*>(camera);
-    if (target && s_camera.load() == target)
+    if (target)
     {
         Timer timer;
         while (!target->m_frame_buffer.connected())
